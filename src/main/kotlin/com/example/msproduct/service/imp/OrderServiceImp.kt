@@ -1,7 +1,5 @@
 package com.example.msproduct.service.imp
 
-import com.example.msproduct.dto.enums.OrderStatusEnum
-import com.example.msproduct.dto.request.OrderDtoRequest
 import com.example.msproduct.dto.response.OrderDto
 import com.example.msproduct.dto.request.OrderDtoRequestCreate
 import com.example.msproduct.errors.EntityNotFoundException
@@ -42,20 +40,6 @@ class OrderServiceImp(
         val response = orderRepository.findById(id).orElseThrow{
             EntityNotFoundException("Non-existent entity order with id $id")
         }
-        return orderMapper.toDto(response)
-    }
-
-    override fun update(orderDto: OrderDtoRequest, id: UUID): OrderDto {
-        val orderEntity = orderRepository.findById(id).orElseThrow {
-            EntityNotFoundException("Non-existent entity order with id $id")
-        }
-        if(orderDto.status == OrderStatusEnum.CANCELED && orderEntity.status == OrderStatusEnum.PENDING){
-            orderEntity.products?.forEach { product ->
-                product.stock!!.stock += 1
-            }
-        }
-        orderMapper.update(orderDto, orderEntity)
-        val response = orderRepository.save(orderEntity)
         return orderMapper.toDto(response)
     }
 

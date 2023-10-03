@@ -1,6 +1,5 @@
 package com.example.msproduct.controller
 
-import com.example.msproduct.dto.request.OrderDtoRequest
 import com.example.msproduct.dto.response.OrderDto
 import com.example.msproduct.dto.request.OrderDtoRequestCreate
 import com.example.msproduct.service.OrderService
@@ -31,10 +30,6 @@ class OrderController (val orderService: OrderService){
     @PostMapping
     fun create(@RequestBody orderDto: OrderDtoRequestCreate) : OrderDto
         = orderService.create(orderDto)
-
-    @PutMapping("/{id}/update")
-    fun update(@RequestBody orderDto: OrderDtoRequest, @PathVariable("id") id : UUID) : OrderDto
-        = orderService.update(orderDto, id)
 
     @PutMapping("/{id}/add-product")
     fun addProduct(@RequestBody products: List<UUID>, @PathVariable("id") id : UUID) : OrderDto

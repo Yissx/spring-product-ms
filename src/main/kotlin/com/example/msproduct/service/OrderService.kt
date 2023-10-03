@@ -1,6 +1,5 @@
 package com.example.msproduct.service
 
-import com.example.msproduct.dto.request.OrderDtoRequest
 import com.example.msproduct.dto.response.OrderDto
 import com.example.msproduct.dto.request.OrderDtoRequestCreate
 import java.util.UUID
@@ -11,8 +10,6 @@ interface OrderService {
     fun findAll() : List<OrderDto>
 
     fun findById(id : UUID) : OrderDto
-
-    fun update(orderDto: OrderDtoRequest, id : UUID) : OrderDto
 
     fun addProduct(products: List<UUID>, id : UUID) : OrderDto
 
