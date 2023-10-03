@@ -49,13 +49,10 @@ class OrderServiceImp(
         val orderEntity = orderRepository.findById(id).orElseThrow {
             EntityNotFoundException("Non-existent entity order with id $id")
         }
-        //val stockProductsToBeUpdated : MutableList<ProductEntity> = mutableListOf()
-        if(orderDto.status == OrderStatusEnum.CANCELED && orderEntity.status != OrderStatusEnum.CANCELED){
+        if(orderDto.status == OrderStatusEnum.CANCELED && orderEntity.status == OrderStatusEnum.PENDING){
             orderEntity.products?.forEach { product ->
                 product.stock!!.stock += 1
-                //stockProductsToBeUpdated.add(product)
             }
-            //orderEntity.products?.removeAll(stockProductsToBeUpdated)
         }
         orderMapper.update(orderDto, orderEntity)
         val response = orderRepository.save(orderEntity)
