@@ -15,8 +15,8 @@ import java.util.UUID
 class StockController (val stockService : StockService){
 
     @PutMapping("/{id}/add")
-    fun update(@RequestBody stockDto: StockDtoRequest, @PathVariable("id") id : UUID) : StockDto
-        = stockService.update(stockDto, id)
+    fun set(@RequestBody stockDto: StockDtoRequest, @PathVariable("id") id : UUID) : StockDto
+        = stockService.set(stockDto, id)
 
     @RequestMapping
     fun findAll() : List<StockDto>
