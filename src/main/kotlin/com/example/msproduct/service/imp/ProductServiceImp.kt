@@ -49,8 +49,10 @@ class ProductServiceImp (
     }
 
     override fun delete(id : UUID){
-        val entity = productRepository.findById(id).orElseThrow { EntityNotFoundException("Non-existent product entity with id $id") }
-        productRepository.deleteProductFromOrder(entity.id)
+        val product = productRepository.findById(id).orElseThrow { EntityNotFoundException("Non-existent product entity with id $id") }
+        product.orders?.forEach { order ->
+            order.products!!.remove(product)
+        }
         productRepository.deleteById(id)
     }
 }
