@@ -1,11 +1,11 @@
 package com.example.msproduct
 
 import com.example.msproduct.dto.response.ProductDto
-import com.example.msproduct.entity.ProductEntity
 import com.example.msproduct.errors.EntityNotFoundException
 import com.example.msproduct.mapper.ProductMapper
 import com.example.msproduct.repository.ProductRepository
 import com.example.msproduct.service.imp.ProductServiceImp
+import com.example.msproduct.service.imp.StockServiceImp
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -16,11 +16,10 @@ import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.quality.Strictness
 import org.junit.jupiter.api.Test
 import java.util.Optional
-import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class MsProductTest : TestData(){
+class MsProductTest : ProductTestData(){
 
     @InjectMocks
     private lateinit var productServiceImp : ProductServiceImp
@@ -29,14 +28,14 @@ class MsProductTest : TestData(){
     private lateinit var productRepository : ProductRepository
     @Mock
     private lateinit var productMapper: ProductMapper
-
+    @Mock
+    private lateinit var stockServiceImp: StockServiceImp
 
     @Test
     fun `find all`(){
         val entities = msProductList()
-        Mockito.`when`(productRepository.findAll()).thenReturn(
-            entities
-        )
+
+        Mockito.`when`(productRepository.findAll()).thenReturn(entities)
         Mockito.`when`(productMapper.toDto(entities)).thenReturn(
             listOf(
                 ProductDto().apply{
@@ -49,7 +48,9 @@ class MsProductTest : TestData(){
                     id = entities[2].id
                 })
         )
+
         val response = productServiceImp.findAll()
+
         Mockito.verify(productRepository).findAll()
         Assertions.assertThat(entities.size).isEqualTo(response.size)
     }
@@ -57,105 +58,96 @@ class MsProductTest : TestData(){
     @Test
     fun `find by id`(){
         val entity = msProduct()
-        Mockito.`when`(productRepository.findById(entity.id!!)).thenReturn(
-            Optional.of(entity)
-        )
-        Mockito.`when`(productMapper.toDto(entity)).thenReturn(
-            ProductDto().apply {
-                id = entity.id
-            }
-        )
-        val response = productServiceImp.findById(entity.id!!)
-        Mockito.verify(productRepository).findById(entity.id!!)
+        val dto = msProductDto()
+
+        Mockito.`when`(productRepository.findById(dto.id!!)).thenReturn(Optional.of(entity))
+        Mockito.`when`(productMapper.toDto(entity)).thenReturn(dto)
+
+        val response = productServiceImp.findById(dto.id!!)
+
+        Mockito.verify(productRepository).findById(dto.id!!)
         Assertions.assertThat(entity.id).isEqualTo(response.id)
     }
     @Test
     fun `find by id not found`(){
         val entity = msProduct()
-        Mockito.`when`(productRepository.findById(entity.id!!)).thenReturn(
-            Optional.empty()
-        )
+
+        Mockito.`when`(productRepository.findById(entity.id)).thenReturn(Optional.empty())
         Assertions.assertThatExceptionOfType(EntityNotFoundException::class.java).isThrownBy {
-            productServiceImp.findById(entity.id!!)
+            productServiceImp.findById(entity.id)
         }
     }
 
     @Test
-    fun `create`() {
+    fun create(){
         val dto = msProductDto()
-        Mockito.`when`(productMapper.toEntity(dto)).thenReturn(
-            ProductEntity().apply {
-                id = dto.id!!
-                name = dto.name
-                description = dto.description
-                price = dto.price
-            }
-        )
-        val entity= msProduct()
-        Mockito.`when`(productRepository.save(entity)).thenReturn(
-            entity
-        )
-        Mockito.`when`(productMapper.toDto(entity)).thenReturn(
-            ProductDto().apply {
-                id = entity.id
-                name = entity.name
-                description = entity.description
-                price = entity.price
-            }
-        )
+        val entity = msProduct()
+
+        Mockito.`when`(productMapper.toEntity(dto)).thenReturn(entity)
+        Mockito.`when`(productRepository.save(entity)).thenReturn(entity)
+        Mockito.`when`(productMapper.toDto(entity)).thenReturn(dto)
+        Mockito.doNothing().`when`(stockServiceImp).create(product = entity)
+
         val response = productServiceImp.create(dto)
-        //Mockito.verify(productRepository).save(entity)
-        Assertions.assertThat(dto.name).isEqualTo(response.name)
+
+        Mockito.verify(productMapper).toEntity(dto)
+        Mockito.verify(productRepository).save(entity)
+        Mockito.verify(productMapper).toDto(entity)
+        Assertions.assertThat(response.id).isEqualTo(dto.id)
     }
 
     @Test
-    fun `update`(){
+    fun update(){
         val entity = msProduct()
-        Mockito.`when`(productRepository.save(entity)).thenReturn(
-            entity
-        )
-        Mockito.`when`(productRepository.findById(entity.id!!)).thenReturn(
-            Optional.of(entity)
-        )
-        Mockito.`when`(productMapper.toDto(entity)).thenReturn(
-            ProductDto().apply {
-                id = entity.id
-                name = entity.name
-                description = "no description"
-                price = entity.price
-            }
-        )
-        val request = productMapper.toDto(entity)
+        val dto = msProductUpdateDto()
+
+        Mockito.`when`(productRepository.findById(dto.id!!)).thenReturn(Optional.of(entity))
+        Mockito.`when`(productMapper.updateEntity(dto, entity)).thenAnswer { entity.description to dto.description }
+        Mockito.`when`(productRepository.save(entity)).thenReturn(entity)
+        Mockito.`when`(productMapper.toDto(entity)).thenReturn(dto)
+
+        val response = productServiceImp.update(dto, dto.id!!)
+
+        Mockito.verify(productRepository).findById(dto.id!!)
+        Mockito.verify(productMapper).updateEntity(dto, entity)
+        Mockito.verify(productRepository).save(entity)
         Mockito.verify(productMapper).toDto(entity)
-        val response = productServiceImp.update(request, request.id!!)
-        //Mockito.verify(productRepository).save(entity)
         Assertions.assertThat(entity.id).isEqualTo(response.id)
-        Assertions.assertThat(entity.description).isNotEqualTo(response.description)
+        Assertions.assertThat(response.description).isNotEqualTo(entity.description)
     }
     @Test
     fun `update not found`(){
-        val entity = msProduct()
-        Mockito.`when`(productMapper.toDto(entity)).thenReturn(
-            ProductDto().apply {
-                id = entity.id
-                name = entity.name
-                description = "no description"
-                price = entity.price
-            }
-        )
-        Mockito.`when`(productRepository.findById(entity.id!!)).thenThrow(
-            EntityNotFoundException("exception"))
+        val dto = msProductDto()
 
+        Mockito.`when`(productRepository.findById(dto.id!!)).thenReturn(Optional.empty())
         Assertions.assertThatExceptionOfType(EntityNotFoundException::class.java).isThrownBy {
-            productServiceImp.update(productMapper.toDto(entity), entity.id!!)
+            productServiceImp.update(dto, dto.id!!)
         }
     }
 
     @Test
-    fun `delete`(){
-        val id : UUID = UUID.randomUUID()
-        Mockito.doNothing().`when`(productRepository).deleteById(id)
-        productServiceImp.delete(id)
-        Mockito.verify(productRepository).deleteById(id)
+    fun delete(){
+        val dto = msProductDto()
+
+        Mockito.`when`(productRepository.findById(dto.id!!)).thenReturn(Optional.empty())
+        Assertions.assertThatExceptionOfType(EntityNotFoundException::class.java).isThrownBy {
+            productServiceImp.update(dto, dto.id!!)
+        }
+    }
+
+    @Test
+    fun `delete with id not found`(){
+        val entity = msProduct()
+
+        Mockito.`when`(productRepository.findById(entity.id)).thenReturn(Optional.of(entity))
+        Mockito.doNothing().`when`(productRepository).deleteById(entity.id)
+
+        productServiceImp.delete(entity.id)
+
+        Mockito.verify(productRepository).deleteById(entity.id)
+    }
+
+    private fun <T> any(): T {
+        return org.mockito.ArgumentMatchers.any()
     }
 }
