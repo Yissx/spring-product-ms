@@ -1,6 +1,6 @@
 package com.example.msproduct
 
-import com.example.msproduct.dto.response.ProductDto
+import com.example.msproduct.TestData.ProductTestData
 import com.example.msproduct.errors.EntityNotFoundException
 import com.example.msproduct.mapper.ProductMapper
 import com.example.msproduct.repository.ProductRepository
@@ -34,20 +34,10 @@ class MsProductTest : ProductTestData(){
     @Test
     fun `find all`(){
         val entities = msProductList()
+        val dtos = msProductDtoList()
 
         Mockito.`when`(productRepository.findAll()).thenReturn(entities)
-        Mockito.`when`(productMapper.toDto(entities)).thenReturn(
-            listOf(
-                ProductDto().apply{
-                    id = entities[0].id
-                },
-                ProductDto().apply{
-                    id = entities[1].id
-                },
-                ProductDto().apply{
-                    id = entities[2].id
-                })
-        )
+        Mockito.`when`(productMapper.toDto(entities)).thenReturn(dtos)
 
         val response = productServiceImp.findAll()
 
