@@ -1,11 +1,11 @@
 package com.example.msproduct
 
-import com.example.msproduct.TestData.ProductTestData
 import com.example.msproduct.errors.EntityNotFoundException
 import com.example.msproduct.mapper.ProductMapper
 import com.example.msproduct.repository.ProductRepository
 import com.example.msproduct.service.imp.ProductServiceImp
 import com.example.msproduct.service.imp.StockServiceImp
+import com.example.msproduct.data.ProductTestData
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.quality.Strictness
 import org.junit.jupiter.api.Test
 import java.util.Optional
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -60,11 +61,11 @@ class MsProductTest : ProductTestData(){
     }
     @Test
     fun `find by id not found`(){
-        val entity = msProduct()
+        val id = UUID.randomUUID()
 
-        Mockito.`when`(productRepository.findById(entity.id)).thenReturn(Optional.empty())
+        Mockito.`when`(productRepository.findById(id)).thenReturn(Optional.empty())
         Assertions.assertThatExceptionOfType(EntityNotFoundException::class.java).isThrownBy {
-            productServiceImp.findById(entity.id)
+            productServiceImp.findById(id)
         }
     }
 
@@ -89,10 +90,10 @@ class MsProductTest : ProductTestData(){
     @Test
     fun update(){
         val entity = msProduct()
-        val dto = msProductUpdateDto()
+        val dto = msProductDtoUpdated()
 
         Mockito.`when`(productRepository.findById(dto.id!!)).thenReturn(Optional.of(entity))
-        Mockito.`when`(productMapper.updateEntity(dto, entity)).thenAnswer { entity.description to dto.description }
+        Mockito.doNothing().`when`(productMapper).updateEntity(dto, entity)
         Mockito.`when`(productRepository.save(entity)).thenReturn(entity)
         Mockito.`when`(productMapper.toDto(entity)).thenReturn(dto)
 
@@ -116,7 +117,7 @@ class MsProductTest : ProductTestData(){
     }
 
     @Test
-    fun delete(){
+    fun `delete with id not found`(){
         val dto = msProductDto()
 
         Mockito.`when`(productRepository.findById(dto.id!!)).thenReturn(Optional.empty())
@@ -126,7 +127,7 @@ class MsProductTest : ProductTestData(){
     }
 
     @Test
-    fun `delete with id not found`(){
+    fun delete(){
         val entity = msProduct()
 
         Mockito.`when`(productRepository.findById(entity.id)).thenReturn(Optional.of(entity))
