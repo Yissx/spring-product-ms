@@ -32,9 +32,7 @@ class OrderServiceImp(
 
     override fun findAll(): List<OrderDto> {
         val response = orderRepository.findAll()
-        return response.map {
-            orderMapper.toDto(it)
-        }
+        return orderMapper.toDto(response)
     }
 
     override fun findById(id: UUID): OrderDto {
