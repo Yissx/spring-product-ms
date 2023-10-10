@@ -1,8 +1,9 @@
 package com.example.msproduct
 
-import com.example.msproduct.TestData.OrderTestData
+import com.example.msproduct.data.OrderTestData
 import com.example.msproduct.entity.ClientEntity
 import com.example.msproduct.errors.EntityNotFoundException
+import com.example.msproduct.errors.ProductNotAvailable
 import com.example.msproduct.mapper.OrderMapper
 import com.example.msproduct.repository.ClientRepository
 import com.example.msproduct.repository.OrderRepository
@@ -150,6 +151,55 @@ class MsOrderTest : OrderTestData(){
 
     @Test
     fun `add product - no product availability`(){
+        val product = msOrderProductNoStock()
+        val order = msOrder()
+        val productIds = mutableListOf(product.id)
 
+        Mockito.`when`(orderRepository.findById(order.id!!)).thenReturn(Optional.of(order))
+        Mockito.`when`(productRepository.findById(productIds[0])).thenReturn(Optional.of(product))
+
+        Assertions.assertThatExceptionOfType(ProductNotAvailable::class.java).isThrownBy { orderServiceImp.addProduct(productIds, order.id) }
+    }
+
+    @Test
+    fun `delete product`(){
+        val orderWithProducts = msOrderProduct()
+        val order = msOrder()
+        val dto = msOrderDtoResponse()
+        val product = msOrderProductStock()
+        val ids = listOf<UUID>(product.id)
+
+
+        Mockito.`when`(orderRepository.findById(dto.id!!)).thenReturn(Optional.of(orderWithProducts))
+        Mockito.`when`(productRepository.findById(ids[0])).thenReturn(Optional.of(product))
+        Mockito.`when`(productRepository.save(product)).thenReturn(product)
+        Mockito.`when`(orderRepository.save(orderWithProducts)).thenReturn(order)
+        Mockito.`when`(orderMapper.toDto(order)).thenReturn(dto)
+
+        val response = orderServiceImp.deleteProduct(ids, dto.id!!)
+
+        Mockito.verify(orderRepository).findById(dto.id!!)
+        Mockito.verify(productRepository).findById(ids[0])
+        Mockito.verify(orderRepository).save(orderWithProducts)
+        Assertions.assertThat(response.productsId)?.isNull()
+    }
+
+    @Test
+    fun `delete product - order not found`(){
+        val id = UUID.randomUUID()
+
+        Mockito.`when`(orderRepository.findById(id)).thenReturn(Optional.empty())
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException::class.java).isThrownBy { orderServiceImp.findById(id) }
+    }
+
+    @Test
+    fun `delete product - product not found`(){
+        val id = UUID.randomUUID()
+
+        Mockito.`when`(orderRepository.findById(id)).thenReturn(Optional.empty())
+        Mockito.`when`(productRepository.findById(id)).thenReturn(Optional.empty())
+
+        Assertions.assertThatExceptionOfType(EntityNotFoundException::class.java).isThrownBy { orderServiceImp.findById(id) }
     }
 }
