@@ -14,7 +14,7 @@ data class OrderDto (
     var clientId : UUID? = null,
 
     @NotNull
-    var products : List<UUID>? = null,
+    var productsId : List<UUID>? = null,
 
     var status : OrderStatusEnum? = null
 )

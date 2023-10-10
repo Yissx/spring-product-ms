@@ -24,7 +24,8 @@ class OrderServiceImp(
         val client = clientRepository.findById(orderDto.clientId!!).orElseThrow {
             EntityNotFoundException("Non-existent client entity with id ${orderDto.clientId}")
         }
-        val orderEntity = orderMapper.toEntity(orderDto, client)
+        val orderEntity = orderMapper.toEntity(orderDto.orderDate!!)
+        orderEntity.client = client
         val response = orderRepository.save(orderEntity)
         return orderMapper.toDto(response)
     }
@@ -67,7 +68,7 @@ class OrderServiceImp(
         val order = orderRepository.findById(id).orElseThrow{
             EntityNotFoundException("Non-existent entity order with id $id")
         }
-        products?.forEach{
+        products.forEach{
             val product = productRepository.findById(it).orElseThrow {
                 EntityNotFoundException("Non-existent entity product with id $id")
             }
